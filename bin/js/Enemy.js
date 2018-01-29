@@ -22,12 +22,15 @@ var Enemy = /** @class */ (function (_super) {
         _this.hps = [1, 3, 15];
         _this.hp = 0;
         _this.fireInterval = [1000, 1500, 3000]; //飞机子弹发射间隔
+        _this.mode = 1; //1:white -1:black
         return _this;
     }
     Enemy.prototype.init = function (type) {
         this.type = type;
         this.y = -100;
         this.x = Math.random() * Laya.stage.width;
+        this.mode = Math.random() > 0.5 ? 1 : -1;
+        changeUnitMode(this.mode, this);
         this.playAction("fly");
         //设置轴心点
         this.pivot(this.getBounds().width / 2, this.getBounds().height / 2);
@@ -94,7 +97,7 @@ var Enemy = /** @class */ (function (_super) {
     Enemy.prototype.FireBullet = function () {
         //无论什么等级， 先发射一个直线导弹先
         var b = Laya.Pool.getItemByClass("bullet", Bullet);
-        b.init(1, 0, -this.bulletSpeed, 2);
+        b.init(1, 0, -this.bulletSpeed, 2, this.mode);
         b.pos(this.x, this.y);
         Laya.stage.addChild(b);
         //如果是小飞机 先瞄准一下        
@@ -112,12 +115,14 @@ var Enemy = /** @class */ (function (_super) {
         for (var i = 0; i < count; i++) {
             //向左发一个
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, -tRota, -this.bulletSpeed, 2);
+            changeUnitMode(this.mode, b);
+            b.init(1, -tRota, -this.bulletSpeed, 2, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
             //再向右发一个            
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, tRota, -this.bulletSpeed, 2);
+            changeUnitMode(this.mode, b);
+            b.init(1, tRota, -this.bulletSpeed, 2, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
             //加大角度            

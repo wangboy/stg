@@ -5,12 +5,13 @@ class Bullet extends Laya.Sprite {
     public speed: number;   //速度
     public tar: Laya.Sprite;//跟踪弹目标
     public ad: number;
+    public mode: number;
 
     constructor() {
         super();
     }
 
-    init(type: number, rota: number, v: number, camp: number, ad: number = 1): void {
+    init(type: number, rota: number, v: number, camp: number, mode: number, ad: number = 1): void {
 
         this.type = type;
         this.rota = rota;
@@ -22,7 +23,13 @@ class Bullet extends Laya.Sprite {
         this.loadImage("gameRole/bullet" + this.camp + ".png");
         this.timer.frameLoop(1, this, this.onMove);
 
+        this.setMode(mode);
         //  this.tar = GameMain.enemy.getChildAt(Math.round(Math.random() * 100 % GameMain.enemy.numChildren)) as Enemy;
+    }
+
+    setMode(mode: number): void {
+        this.mode = mode;
+        changeUnitMode(this.mode, this);
     }
 
     recover(): void {
@@ -30,6 +37,7 @@ class Bullet extends Laya.Sprite {
         this.timer.clear(this, this.onMove);
         this.removeSelf();
         this.graphics.clear();
+        this.filters = []
         Laya.Pool.recover("bullet", this);
     }
 
@@ -91,8 +99,13 @@ class Bullet extends Laya.Sprite {
                 //回收自己
                 this.recover();
 
-                //敌机掉血
-                hero.lostHP();
+                if (this.mode == hero.mode) {
+                    hero.addPower(1);
+                    GameMain.gameInfo.powerBar.value = hero.power / POWER_MAX;
+                } else {
+                    //自机掉血
+                    hero.lostHP();
+                }
             }
         }
 

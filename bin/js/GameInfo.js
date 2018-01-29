@@ -22,6 +22,9 @@ var GameInfo = /** @class */ (function (_super) {
         //注册终极武器事件
         _this.btn_boom.on(Laya.Event.MOUSE_DOWN, _this, _this.Boom);
         Laya.stage.on(Laya.Event.KEY_DOWN, _this, _this.Boom);
+        _this.btn_mode.on(Laya.Event.MOUSE_DOWN, _this, _this.changeMode);
+        _this.powerBar.value = 0;
+        _this.powerBar.on(Laya.Event.MOUSE_DOWN, _this, _this.powerAction);
         // 注册2个自动缩小字体的方法        
         _this.lbl_hp.timerLoop(10, _this, function () {
             if (_this.lbl_hp.fontSize > 48) {
@@ -42,6 +45,18 @@ var GameInfo = /** @class */ (function (_super) {
         });
         return _this;
     }
+    GameInfo.prototype.powerAction = function (e) {
+        if (this.powerBar.value === 1) {
+            this.Boom(e);
+            this.powerBar.value = 0;
+        }
+    };
+    GameInfo.prototype.changeMode = function (e) {
+        var hero = GameMain.hero;
+        if ((hero != null && e.type == Laya.Event.MOUSE_DOWN)) {
+            hero.changeMode();
+        }
+    };
     //发射终极子弹
     GameInfo.prototype.Boom = function (e) {
         if ((GameMain.hero != null && e.type == Laya.Event.MOUSE_DOWN) ||

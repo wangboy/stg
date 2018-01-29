@@ -15,7 +15,7 @@ var Bullet = /** @class */ (function (_super) {
         _this.rota = 0; //发射角度
         return _this;
     }
-    Bullet.prototype.init = function (type, rota, v, camp, ad) {
+    Bullet.prototype.init = function (type, rota, v, camp, mode, ad) {
         if (ad === void 0) { ad = 1; }
         this.type = type;
         this.rota = rota;
@@ -26,13 +26,19 @@ var Bullet = /** @class */ (function (_super) {
         this.ad = ad;
         this.loadImage("gameRole/bullet" + this.camp + ".png");
         this.timer.frameLoop(1, this, this.onMove);
+        this.setMode(mode);
         //  this.tar = GameMain.enemy.getChildAt(Math.round(Math.random() * 100 % GameMain.enemy.numChildren)) as Enemy;
+    };
+    Bullet.prototype.setMode = function (mode) {
+        this.mode = mode;
+        changeUnitMode(this.mode, this);
     };
     Bullet.prototype.recover = function () {
         //清除子弹移动事件
         this.timer.clear(this, this.onMove);
         this.removeSelf();
         this.graphics.clear();
+        this.filters = [];
         Laya.Pool.recover("bullet", this);
     };
     Bullet.prototype.onMove = function () {
@@ -77,8 +83,14 @@ var Bullet = /** @class */ (function (_super) {
             if (Math.abs(this.x - hero.x) < hitRadius && Math.abs(this.y - hero.y) < hitRadius) {
                 //回收自己
                 this.recover();
-                //敌机掉血
-                hero.lostHP();
+                if (this.mode == hero.mode) {
+                    hero.addPower(1);
+                    GameMain.gameInfo.powerBar.value = hero.power / POWER_MAX;
+                }
+                else {
+                    //自机掉血
+                    hero.lostHP();
+                }
             }
         }
     };

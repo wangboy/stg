@@ -21,6 +21,11 @@ var Hero = /** @class */ (function (_super) {
         _this.hp = 0;
         _this.score = 0;
         _this.boomCount = 3;
+        _this.followMouse = false;
+        _this.lastMouseX = 0;
+        _this.lastMouseY = 0;
+        _this.mode = 1;
+        _this.power = 0;
         return _this;
     }
     //创建主角    
@@ -38,9 +43,15 @@ var Hero = /** @class */ (function (_super) {
         GameMain.gameInfo.SetHP(this.hp);
         this.boomCount = 3;
         GameMain.gameInfo.SetBoomCount(this.boomCount);
+        this.mode = 1;
+        changeUnitMode(this.mode, this);
+        this.power = 0;
         Laya.stage.addChild(this);
         Laya.Tween.to(this, { y: Laya.stage.height / 2 + 200 }, 1000, Laya.Ease.circOut, Laya.Handler.create(this, function () {
             GameMain.gameInfo.btn_boom.visible = true;
+            Laya.stage.mouseEnabled = true;
+            Laya.stage.on(Laya.Event.MOUSE_DOWN, _this, _this.onMouseDown);
+            Laya.stage.on(Laya.Event.MOUSE_UP, _this, _this.onMouseUp);
             //鼠标移动        
             Laya.stage.frameLoop(1, _this, _this.onMouseMove);
             //发射子弹
@@ -49,13 +60,41 @@ var Hero = /** @class */ (function (_super) {
             _this.on(Laya.Event.COMPLETE, _this, _this.onComplete);
         }));
     };
+    Hero.prototype.onMouseUp = function () {
+        // console.log(" onMouseUp ")
+        this.followMouse = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+    };
+    Hero.prototype.onMouseDown = function () {
+        // console.log(" onMouseDown ")
+        this.followMouse = true;
+        this.lastMouseX = Laya.stage.mouseX;
+        this.lastMouseY = Laya.stage.mouseY;
+    };
     Hero.prototype.onMouseMove = function () {
+        if (!this.followMouse) {
+            return;
+        }
         if (Laya.stage.mouseX < GameMain.gameInfo.btn_boom.width &&
             Laya.stage.mouseY > GameMain.gameInfo.btn_boom.y &&
             Laya.stage.mouseY < GameMain.gameInfo.btn_boom.y + GameMain.gameInfo.btn_boom.height) {
             return;
         }
-        Move.MoveToPoint(this, 20, Laya.stage.mouseX, Laya.stage.mouseY - 40);
+        var moveX = Laya.stage.mouseX - this.lastMouseX;
+        var moveY = Laya.stage.mouseY - this.lastMouseY;
+        this.lastMouseX = Laya.stage.mouseX;
+        this.lastMouseY = Laya.stage.mouseY;
+        // Move.MoveToPoint(this, 20, Laya.stage.mouseX, Laya.stage.mouseY - 40);
+        //动画移动
+        Move.MoveToPoint(this, 20, this.x + moveX, this.y + moveY);
+        //直接设置
+        // this.x = this.x + moveX;
+        // this.y = this.y + moveY;
+        // if (this.x > Laya.stage.width) { this.x = Laya.stage.width; }
+        // if (this.x < 0) { this.x = 0; }
+        // if (this.y > Laya.stage.height) { this.y = Laya.stage.height; }
+        // if (this.y < 0) { this.y = 0; }
         //检测是否碰到敌人  以及是否吃到东西    
         for (var i = GameMain.enemy.numChildren - 1; i >= 0; i--) {
             var enemy = GameMain.enemy.getChildAt(i);
@@ -113,11 +152,11 @@ var Hero = /** @class */ (function (_super) {
     };
     //终极武器
     Hero.prototype.FireBoom = function () {
-        var _this = this;
-        if (this.boomCount <= 0)
-            return;
+        // if (this.boomCount <= 0) return;
         //减少道具数量
-        GameMain.gameInfo.SetBoomCount(--this.boomCount);
+        // GameMain.gameInfo.SetBoomCount(--this.boomCount);
+        var _this = this;
+        this.power = 0;
         Laya.timer.loop(100, this, this._FireBoom);
         Laya.timer.once(300, this, function () {
             Laya.timer.clear(_this, _this._FireBoom);
@@ -150,13 +189,13 @@ var Hero = /** @class */ (function (_super) {
         Laya.SoundManager.playSound("res/sound/bullet.mp3");
         //无论什么等级， 先发射一个普通导弹
         var b = Laya.Pool.getItemByClass("bullet", Bullet);
-        b.init(1, 0, 20, 1);
+        b.init(1, 0, 20, 1, this.mode);
         b.pos(this.x, this.y);
         Laya.stage.addChild(b);
         //再发射跟踪导弹
         for (var i = 0; i < this.fireLevel + 1; i++) {
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(2, 0, 20, 1);
+            b.init(2, 0, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
         }
@@ -165,17 +204,21 @@ var Hero = /** @class */ (function (_super) {
         for (var i = 0; i < this.fireLevel; i++) {
             //向左发一个
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, -tRota, 20, 1);
+            b.init(1, -tRota, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
             //再向右发一个            
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, tRota, 20, 1);
+            b.init(1, tRota, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
             //加大角度            
             tRota += this.firerota;
         }
+    };
+    Hero.prototype.addPower = function (add) {
+        this.power += add;
+        console.log("power = " + this.power);
     };
     //加血    
     Hero.prototype.AddHP = function () {
@@ -206,8 +249,13 @@ var Hero = /** @class */ (function (_super) {
         var redFilter = new Laya.ColorFilter(redMat);
         this.filters = [redFilter];
         this.timerOnce(100, this, function () {
-            _this.filters = null;
+            // this.filters = null;
+            changeUnitMode(_this.mode, _this);
         });
+    };
+    Hero.prototype.changeMode = function () {
+        this.mode = this.mode * -1;
+        changeUnitMode(this.mode, this);
     };
     Hero.prototype.onComplete = function () {
         //死了就不发子弹了

@@ -12,6 +12,14 @@ class Hero extends Laya.Animation {
     public hp: number = 0;
     public score: number = 0;
     public boomCount: number = 3;
+
+    private followMouse: boolean = false;
+    private lastMouseX: number = 0;
+    private lastMouseY: number = 0;
+
+    public mode: number = 1;
+    public power: number = 0;
+
     //创建主角    
     create(): void {
 
@@ -29,13 +37,21 @@ class Hero extends Laya.Animation {
         this.boomCount = 3;
         GameMain.gameInfo.SetBoomCount(this.boomCount);
 
+        this.mode = 1;
+        changeUnitMode(this.mode, this);
 
+        this.power = 0;
         Laya.stage.addChild(this);
 
 
         Laya.Tween.to(this, { y: Laya.stage.height / 2 + 200 }, 1000, Laya.Ease.circOut, Laya.Handler.create(this, () => {
 
             GameMain.gameInfo.btn_boom.visible = true;
+
+            Laya.stage.mouseEnabled = true;
+            Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.onMouseDown);
+            Laya.stage.on(Laya.Event.MOUSE_UP, this, this.onMouseUp);
+
             //鼠标移动        
             Laya.stage.frameLoop(1, this, this.onMouseMove);
 
@@ -49,9 +65,24 @@ class Hero extends Laya.Animation {
 
     }
 
+    onMouseUp(): void {
+        // console.log(" onMouseUp ")
+        this.followMouse = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+    }
 
+    onMouseDown(): void {
+        // console.log(" onMouseDown ")
+        this.followMouse = true;
+        this.lastMouseX = Laya.stage.mouseX;
+        this.lastMouseY = Laya.stage.mouseY;
+    }
 
     onMouseMove(): void {
+        if (!this.followMouse) {
+            return;
+        }
         if (
             Laya.stage.mouseX < GameMain.gameInfo.btn_boom.width &&
             Laya.stage.mouseY > GameMain.gameInfo.btn_boom.y &&
@@ -59,7 +90,22 @@ class Hero extends Laya.Animation {
         ) {
             return;
         }
-        Move.MoveToPoint(this, 20, Laya.stage.mouseX, Laya.stage.mouseY - 40);
+        var moveX = Laya.stage.mouseX - this.lastMouseX;
+        var moveY = Laya.stage.mouseY - this.lastMouseY;
+        this.lastMouseX = Laya.stage.mouseX;
+        this.lastMouseY = Laya.stage.mouseY;
+
+        // Move.MoveToPoint(this, 20, Laya.stage.mouseX, Laya.stage.mouseY - 40);
+        //动画移动
+        Move.MoveToPoint(this, 20, this.x + moveX, this.y + moveY);
+        //直接设置
+        // this.x = this.x + moveX;
+        // this.y = this.y + moveY;
+        // if (this.x > Laya.stage.width) { this.x = Laya.stage.width; }
+        // if (this.x < 0) { this.x = 0; }
+        // if (this.y > Laya.stage.height) { this.y = Laya.stage.height; }
+        // if (this.y < 0) { this.y = 0; }
+
 
         //检测是否碰到敌人  以及是否吃到东西    
         for (var i = GameMain.enemy.numChildren - 1; i >= 0; i--) {
@@ -136,24 +182,19 @@ class Hero extends Laya.Animation {
     //终极武器
     FireBoom(): void {
 
-        if (this.boomCount <= 0) return;
+        // if (this.boomCount <= 0) return;
         //减少道具数量
-        GameMain.gameInfo.SetBoomCount(--this.boomCount);
-
-
+        // GameMain.gameInfo.SetBoomCount(--this.boomCount);
+        
+        this.power = 0;
 
         Laya.timer.loop(100, this, this._FireBoom);
 
         Laya.timer.once(300, this, () => {
             Laya.timer.clear(this, this._FireBoom);
         });
-
-
-
-
-
-
     }
+
     private _FireBoom(): void {
         var b: Bullet = Laya.Pool.getItemByClass("bullet", Bullet);
         b.init(1, 0, 20, 1, this.fireLevel);
@@ -188,14 +229,14 @@ class Hero extends Laya.Animation {
 
         //无论什么等级， 先发射一个普通导弹
         var b: Bullet = Laya.Pool.getItemByClass("bullet", Bullet);
-        b.init(1, 0, 20, 1);
+        b.init(1, 0, 20, 1, this.mode);
         b.pos(this.x, this.y);
         Laya.stage.addChild(b);
 
         //再发射跟踪导弹
         for (var i = 0; i < this.fireLevel + 1; i++) {
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(2, 0, 20, 1);
+            b.init(2, 0, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
 
@@ -206,13 +247,13 @@ class Hero extends Laya.Animation {
         for (var i = 0; i < this.fireLevel; i++) {
             //向左发一个
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, -tRota, 20, 1);
+            b.init(1, -tRota, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
 
             //再向右发一个            
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, tRota, 20, 1);
+            b.init(1, tRota, 20, 1, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
 
@@ -220,6 +261,11 @@ class Hero extends Laya.Animation {
             tRota += this.firerota;
 
         }
+    }
+
+    addPower(add: number): void {
+        this.power += add;
+        console.log("power = " + this.power);
     }
 
     //加血    
@@ -253,8 +299,14 @@ class Hero extends Laya.Animation {
         var redFilter: Laya.ColorFilter = new Laya.ColorFilter(redMat);
         this.filters = [redFilter];
         this.timerOnce(100, this, () => {
-            this.filters = null;
+            // this.filters = null;
+            changeUnitMode(this.mode, this);
         });
+    }
+
+    changeMode(): void {
+        this.mode = this.mode * -1;
+        changeUnitMode(this.mode, this);
     }
 
     onComplete(): void {

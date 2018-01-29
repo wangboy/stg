@@ -11,7 +11,7 @@ class Enemy extends Laya.Animation {
 
     public fireInterval: number[] = [1000, 1500, 3000]; //飞机子弹发射间隔
 
-
+    private mode: number = 1; //1:white -1:black
     // public hitRadius: number = 0;
 
     constructor() {
@@ -24,6 +24,10 @@ class Enemy extends Laya.Animation {
         this.type = type;
         this.y = -100;
         this.x = Math.random() * Laya.stage.width;
+
+        this.mode = Math.random() > 0.5 ? 1 : -1;
+
+        changeUnitMode(this.mode, this);
 
         this.playAction("fly");
         //设置轴心点
@@ -116,7 +120,7 @@ class Enemy extends Laya.Animation {
 
         //无论什么等级， 先发射一个直线导弹先
         var b: Bullet = Laya.Pool.getItemByClass("bullet", Bullet);
-        b.init(1, 0, -this.bulletSpeed, 2);
+        b.init(1, 0, -this.bulletSpeed, 2, this.mode);
         b.pos(this.x, this.y);
         Laya.stage.addChild(b);
 
@@ -139,13 +143,15 @@ class Enemy extends Laya.Animation {
         for (var i = 0; i < count; i++) {
             //向左发一个
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, -tRota, -this.bulletSpeed, 2);
+            changeUnitMode(this.mode, b);
+            b.init(1, -tRota, -this.bulletSpeed, 2, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
 
             //再向右发一个            
             b = Laya.Pool.getItemByClass("bullet", Bullet);
-            b.init(1, tRota, -this.bulletSpeed, 2);
+            changeUnitMode(this.mode, b);
+            b.init(1, tRota, -this.bulletSpeed, 2, this.mode);
             b.pos(this.x, this.y);
             Laya.stage.addChild(b);
 

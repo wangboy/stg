@@ -4,9 +4,10 @@ var GameMain = /** @class */ (function () {
         this.pro = new Laya.Label();
         Laya.init(720, 1280, Laya.WebGL);
         Laya.stage.scaleMode = Laya.Stage.SCALE_EXACTFIT;
-        Laya.stage.screenMode = Laya.Stage.SCREEN_VERTICAL;
+        Laya.stage.screenMode = Laya.Stage.SCREEN_HORIZONTAL;
         //   Laya.stage.frameRate = "slow";
         //      Laya.Stat.show();
+        Laya.Stat.show();
         this.pro = new Laya.Label();
         this.pro.width = Laya.stage.width;
         this.pro.fontSize = 26;
@@ -14,15 +15,19 @@ var GameMain = /** @class */ (function () {
         this.pro.align = "center";
         this.pro.color = "#f00";
         Laya.stage.addChild(this.pro);
+        // Laya.loader.load(["res/atlas/ui.atlas",], Laya.Handler.create(this, this.onLoaded));
         Laya.loader.load([
             {
                 url: "war/background.png", type: Laya.Loader.IMAGE
             },
             {
-                url: "res/atlas/gameRole.json", type: Laya.Loader.ATLAS
+                url: "res/atlas/gameRole.atlas", type: Laya.Loader.ATLAS
             },
             {
-                url: "res/atlas/gameUI.json", type: Laya.Loader.ATLAS
+                url: "res/atlas/comp.atlas", type: Laya.Loader.ATLAS
+            },
+            {
+                url: "res/atlas/gameUI.atlas", type: Laya.Loader.ATLAS
             },
             {
                 url: "res/sound/achievement.mp3", type: Laya.Loader.SOUND

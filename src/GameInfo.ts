@@ -14,7 +14,10 @@ class GameInfo extends ui.GameInfoUI {
         this.btn_boom.on(Laya.Event.MOUSE_DOWN, this, this.Boom);
         Laya.stage.on(Laya.Event.KEY_DOWN, this, this.Boom);
 
+        this.btn_mode.on(Laya.Event.MOUSE_DOWN, this, this.changeMode);
 
+        this.powerBar.value = 0;
+        this.powerBar.on(Laya.Event.MOUSE_DOWN, this, this.powerAction);
         // 注册2个自动缩小字体的方法        
         this.lbl_hp.timerLoop(10, this, () => {
             if (this.lbl_hp.fontSize > 48) {
@@ -36,6 +39,21 @@ class GameInfo extends ui.GameInfoUI {
         });
 
     }
+
+    powerAction(e: Laya.Event):void {
+        if (this.powerBar.value === 1) {
+            this.Boom(e);
+            this.powerBar.value = 0;
+        }
+    }
+
+    changeMode(e: Laya.Event): void {
+        var hero = GameMain.hero;
+        if ((hero != null && e.type == Laya.Event.MOUSE_DOWN)) {
+            hero.changeMode();
+        }
+    }
+
     //发射终极子弹
     Boom(e: Laya.Event): void {
         if (
